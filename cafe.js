@@ -11,15 +11,7 @@ const PORT = 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(session({ secret: 'super-secret-barista-key', resave: false, saveUninitialized: true }));
-const path = require('path');
 
-// Allow the HTML file to load any CSS/JS files you have in your folder
-app.use(express.static(__dirname));
-
-// Serve the main HTML file when someone visits the main link
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'cafe.html'));
-});
 
 // This uses your cloud database if available, and falls back to your local one for testing
 // --- 1. CONNECT TO MONGODB ---
