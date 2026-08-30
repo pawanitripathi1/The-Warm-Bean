@@ -1,0 +1,98 @@
+[
+  {
+    "id": "espresso",
+    "category": "Hot Drinks",
+    "name": "Espresso",
+    "desc": "A strong, concentrated shot.",
+    "price": 120,
+    "inStock": true
+  },
+  {
+    "id": "cappuccino",
+    "category": "Hot Drinks",
+    "name": "Cappuccino",
+    "desc": "Equal parts espresso, steamed milk, and foam.",
+    "price": 160,
+    "inStock": true
+  },
+  {
+    "id": "vanilla-latte",
+    "category": "Hot Drinks",
+    "name": "Vanilla Latte",
+    "desc": "Espresso with steamed milk and vanilla syrup.",
+    "price": 180,
+    "inStock": true
+  },
+  {
+    "id": "nitro-cold-brew",
+    "category": "Cold Drinks",
+    "name": "Nitro Cold Brew",
+    "desc": "Velvety, creamy, infused with nitrogen.",
+    "price": 220,
+    "inStock": true
+  },
+  {
+    "id": "iced-americano",
+    "category": "Cold Drinks",
+    "name": "Iced Americano",
+    "desc": "Espresso poured over cold water and ice.",
+    "price": 140,
+    "inStock": true
+  },
+  {
+    "id": "iced-caramel-macchiato",
+    "category": "Cold Drinks",
+    "name": "Iced Caramel Macchiato",
+    "desc": "Espresso, milk, vanilla, and caramel drizzle over ice.",
+    "price": 210,
+    "inStock": true
+  },
+  {
+    "id": "matcha-latte",
+    "category": "Hot Drinks",
+    "name": "Matcha Latte",
+    "desc": "Premium green tea powder with steamed milk.",
+    "price": 200,
+    "inStock": true
+  },
+  {
+    "id": "chai-latte",
+    "category": "Hot Drinks",
+    "name": "Spiced Chai Latte",
+    "desc": "Black tea infused with cinnamon, clove, and cardamom.",
+    "price": 190,
+    "inStock": true
+  },
+  {
+    "id": "butter-croissant",
+    "category": "Food",
+    "name": "Butter Croissant",
+    "desc": "Flaky, buttery, baked fresh daily.",
+    "price": 150,
+    "inStock": true
+  },
+  {
+    "id": "blueberry-muffin",
+    "category": "Food",
+    "name": "Blueberry Muffin",
+    "desc": "Warm muffin loaded with fresh wild blueberries.",
+    "price": 130,
+    "inStock": true
+  },
+  {
+    "id": "banana-bread",
+    "category": "Food",
+    "name": "Vegan Banana Bread",
+    "desc": "Thick slice of moist banana bread with walnuts.",
+    "price": 160,
+    "inStock": true
+  },
+  {
+    "id": "avocado-toast",
+    "category": "Food",
+    "name": "Smashed Avocado Toast",
+    "desc": "Sourdough, avocado, chili flakes.",
+    "price": 280,
+    "inStock": true
+  }
+]
