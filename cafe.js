@@ -7,13 +7,10 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const app = express();
 const PORT = 3000;
 
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(session({ secret: 'super-secret-barista-key', resave: false, saveUninitialized: true }));
 
-
-// This uses your cloud database if available, and falls back to your local one for testing
 // --- 1. CONNECT TO MONGODB ---
 const mongoURI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/warmbean';
 mongoose.connect(mongoURI)
@@ -27,7 +24,8 @@ const Menu = mongoose.model('Menu', menuSchema);
 const orderSchema = new mongoose.Schema({ orderId: String, customer: String, item: String, price: Number, instructions: String, time: String, status: String, assignedBarista: String });
 const Order = mongoose.model('Order', orderSchema);
 
-const userSchema = new mongoose.Schema({ username: String, password: String, role: String, email: String, age: Number, lastLogin: Date });
+// UPDATED: Added wishlist array to User schema
+const userSchema = new mongoose.Schema({ username: String, password: String, role: String, email: String, age: Number, lastLogin: Date, wishlist: { type: [String], default: [] } });
 const User = mongoose.model('User', userSchema);
 
 // Automatically seed the expanded menu
@@ -86,10 +84,10 @@ const aestheticStyles = `
         .navbar a:not(.nav-brand-container a) { color: var(--mocha-text); font-size: 0.9rem; font-weight: 500; text-transform: uppercase; letter-spacing: 1.5px; transition: 0.3s ease; padding: 8px 12px; border-radius: 8px; }
         .navbar a:hover:not(.nav-brand-container a) { color: var(--caramel); background: rgba(200, 131, 73, 0.08); }
         .navbar a.nav-ai { color: var(--caramel); font-weight: 600; }
-        .logout-icon { display: none; } /* Hidden on desktop */
+        .logout-icon { display: none; } 
 
         /* --- BOTTOM APP BAR (MOBILE ONLY) --- */
-        .bottom-app-bar { display: none; } /* Hidden on desktop */
+        .bottom-app-bar { display: none; } 
 
         /* --- EXPANDING NAV SEARCH --- */
         .nav-search { display: flex; align-items: center; background: transparent; border-radius: 50px; transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1); position: relative; }
@@ -127,10 +125,12 @@ const aestheticStyles = `
         .action-card p { font-size: 0.9rem; color: var(--mocha-text); margin: 0; }
 
         .category-header { margin-top: 2.5rem; border-bottom: 2px solid var(--bg-cream); padding-bottom: 10px; font-size: 2rem; color: var(--dark-espresso); }
-        .menu-link { display: flex; justify-content: space-between; align-items: center; padding: 20px; border-radius: 16px; transition: 0.2s ease; border-bottom: 1px solid var(--bg-cream); gap: 15px; color: inherit; }
-        .menu-link:hover { background-color: var(--bg-cream); transform: translateX(8px); }
+        
+        /* UPDATED MENU LINK STYLES FOR WISHLIST */
+        .menu-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--bg-cream); padding: 15px 0; transition: 0.2s ease; }
+        .menu-row:hover { background-color: var(--bg-cream); border-radius: 12px; padding-left: 15px; padding-right: 15px; margin-left: -15px; margin-right: -15px; }
+        .menu-link { display: flex; flex: 1; align-items: center; gap: 15px; color: inherit; }
         .menu-link.sold-out { opacity: 0.5; cursor: not-allowed; }
-        .menu-link.sold-out:hover { transform: none; background: none; }
         .price { font-weight: 700; color: var(--caramel); font-size: 1.4rem; white-space: nowrap; }
 
         .ticket { background-color: var(--surface-white); border: 1px solid var(--latte); padding: 20px; margin-bottom: 15px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
@@ -153,27 +153,24 @@ const aestheticStyles = `
         .footer-bottom { border-top: 1px solid rgba(232, 216, 200, 0.1); padding-top: 1.5rem; text-align: center; font-size: 0.85rem; color: var(--mocha-text); }
 
         /* ==================================================
-           📱 MOBILE RESPONSIVE BOTTOM NAV
-           ================================================== */
+            📱 MOBILE RESPONSIVE BOTTOM NAV
+            ================================================== */
         @media (max-width: 850px) {
             .dashboard-grid { grid-template-columns: 1fr; gap: 25px; }
         }
         
         @media (max-width: 650px) {
-            body { padding-bottom: 70px; } /* Creates safe space so bottom nav doesn't cover footer */
+            body { padding-bottom: 70px; } 
 
-            /* Tweak Top Navbar for Mobile */
             .navbar { padding: 10px 15px; }
-            .nav-center { display: none; } /* Hide text links from top bar completely */
+            .nav-center { display: none; } 
             .nav-brand-container { display: block; opacity: 1; transform: none; pointer-events: auto; }
             .nav-brand-container a { font-size: 1.1rem; }
             
-            /* Swap 'Log Out' text for a sleek door icon to save space */
             .logout-text { display: none; }
             .logout-icon { display: inline; font-size: 1.2rem; }
             .nav-right { gap: 8px; }
 
-            /* Bring in the Bottom App Bar */
             .bottom-app-bar {
                 display: flex;
                 justify-content: space-around;
@@ -200,7 +197,6 @@ const aestheticStyles = `
             }
             .bottom-app-bar a:active { transform: translateY(-3px); background: rgba(200, 131, 73, 0.1); }
             
-            /* General Typography & Spacing */
             .header-banner { padding: 2rem 1rem 3.5rem 1rem; }
             .header-banner h1 { font-size: 2.2rem; }
             .header-tagline { font-size: 0.8rem; letter-spacing: 1px; }
@@ -209,8 +205,12 @@ const aestheticStyles = `
             
             .action-grid { grid-template-columns: 1fr; gap: 15px; }
             .action-card { padding: 1.5rem; }
-            .menu-link { flex-direction: column; align-items: flex-start; gap: 8px; }
             .category-header { font-size: 1.6rem; margin-top: 1.5rem; }
+            
+            /* Update mobile wishlist row to stack */
+            .menu-row { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .menu-row > div { width: 100%; justify-content: space-between; }
+            
             .ticket-header { flex-direction: column; align-items: flex-start; gap: 5px; }
             .stats-grid { flex-direction: column; padding: 20px; gap: 10px; }
             .stat-box h3 { font-size: 2.2rem; }
@@ -268,7 +268,7 @@ const renderPage = (content, extraHead = '', hideNav = false) => `
             <a href="/home" title="Home">🏠</a>
             <a href="/menu" title="Menu">🥐</a>
             <a href="/ai-barista" title="AI Barista">✨</a>
-            <a href="/diy-cafe" title="Cafe at Home">🍳</a>
+            <a href="/wishlist" title="Wishlist">🤍</a>
             <a href="/history" title="History">📜</a>
         </nav>
         ` : ''}
@@ -397,7 +397,7 @@ app.post('/auth/register', async (req, res) => {
         return res.send(renderPage(`<h2 style="text-align:center; color: #d9534f;">❌ Email already taken!</h2><div style="text-align:center; margin-top: 25px;"><a href="/register" class="btn">Try a different email</a></div>`, '', true));
     }
     
-    await User.create({ username, email, age, password, role, lastLogin: new Date() });
+    await User.create({ username, email, age, password, role, lastLogin: new Date(), wishlist: [] });
     req.session.username = username;
     req.session.role = role;
 
@@ -459,11 +459,16 @@ app.get('/home', (req, res) => {
     `));
 });
 
+// UPDATED MENU ROUTE TO SUPPORT WISHLIST BUTTONS
 app.get('/menu', async (req, res) => {
     if (!req.session.username) return res.redirect('/');
     
     const searchQuery = req.query.search ? req.query.search.toLowerCase() : '';
     const allMenu = await Menu.find({}).lean();
+    
+    // Fetch the user to see what they have wishlisted
+    const currentUser = await User.findOne({ username: req.session.username }).lean();
+    const userWishlist = currentUser && currentUser.wishlist ? currentUser.wishlist : [];
     
     const menu = searchQuery 
         ? allMenu.filter(item => item.name.toLowerCase().includes(searchQuery) || item.category.toLowerCase().includes(searchQuery))
@@ -473,15 +478,29 @@ app.get('/menu', async (req, res) => {
         const categoryItems = menu.filter(item => item.category === categoryName);
         if (categoryItems.length === 0) return '';
         let html = `<h3 class="category-header">${categoryName}</h3><div style="margin-top: 15px;">`;
-        html += categoryItems.map(item => `
-            <a href="${item.stockCount > 0 ? `/menu/${item.id}` : '#'}" class="menu-link ${item.stockCount <= 0 ? 'sold-out' : ''}">
-                <div class="item-info">
-                    <span style="font-size: 1.2rem; font-weight: 500; display: block; ${item.stockCount <= 0 ? 'text-decoration: line-through; color: #999;' : ''}">${item.name}</span>
-                    <span style="font-size: 0.9rem; color: var(--mocha-text);">${item.desc}</span>
+        
+        html += categoryItems.map(item => {
+            const isWishlisted = userWishlist.includes(item.id);
+            const heartIcon = isWishlisted ? '💖' : '🤍';
+            const actionRoute = isWishlisted ? '/api/wishlist/remove' : '/api/wishlist/add';
+
+            return `
+            <div class="menu-row">
+                <a href="${item.stockCount > 0 ? `/menu/${item.id}` : '#'}" class="menu-link ${item.stockCount <= 0 ? 'sold-out' : ''}">
+                    <div class="item-info">
+                        <span style="font-size: 1.2rem; font-weight: 500; display: block; ${item.stockCount <= 0 ? 'text-decoration: line-through; color: #999;' : ''}">${item.name}</span>
+                        <span style="font-size: 0.9rem; color: var(--mocha-text);">${item.desc}</span>
+                    </div>
+                </a>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <span class="price">₹${item.price}</span>
+                    <form action="${actionRoute}" method="POST" style="margin: 0; z-index: 10;">
+                        <input type="hidden" name="itemId" value="${item.id}">
+                        <button type="submit" style="background: transparent; border: none; font-size: 1.5rem; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'" title="${isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}">${heartIcon}</button>
+                    </form>
                 </div>
-                <span class="price">₹${item.price}</span>
-            </a>
-        `).join('');
+            </div>`;
+        }).join('');
         return html + `</div>`;
     };
 
@@ -626,15 +645,60 @@ app.get('/history', async (req, res) => {
     res.send(renderPage(html));
 });
 
-app.get('/wishlist', (req, res) => {
+// NEW FULL WISHLIST IMPLEMENTATION
+app.get('/wishlist', async (req, res) => {
     if (!req.session.username) return res.redirect('/');
-    res.send(renderPage(`
-        <div style="text-align: center; padding: 3rem 0;">
-            <h2 style="font-size: 2.5rem; color: var(--dark-espresso); margin-bottom: 15px;">🤍 Wishlist</h2>
-            <p style="color: var(--mocha-text); font-size: 1.1rem; margin-bottom: 30px;">This feature is currently under construction!</p>
-            <a href="/home" class="btn">Back to Home</a>
+    
+    const user = await User.findOne({ username: req.session.username }).lean();
+    const wishlistIds = user.wishlist || [];
+    const wishlistItems = await Menu.find({ id: { $in: wishlistIds } }).lean();
+
+    let html = `
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <h2 style="font-size: 3rem; margin: 0; color: var(--dark-espresso);">🤍 Your Wishlist</h2>
+            <p style="margin-top: 10px; font-size: 1.1rem; color: var(--mocha-text);">Saved for your next visit</p>
         </div>
-    `));
+    `;
+
+    if (wishlistItems.length === 0) {
+        html += `<div class="ticket" style="text-align: center; padding: 50px 20px;"><p style="color: var(--mocha-text); font-size: 1.1rem; margin-bottom: 25px;">You haven't saved any items yet!</p><a href="/menu" class="btn">Explore Menu</a></div>`;
+    } else {
+        html += `<div style="margin-top: 15px;">`;
+        wishlistItems.forEach(item => {
+            html += `
+            <div class="menu-row">
+                <a href="${item.stockCount > 0 ? `/menu/${item.id}` : '#'}" class="menu-link ${item.stockCount <= 0 ? 'sold-out' : ''}">
+                    <div class="item-info">
+                        <span style="font-size: 1.2rem; font-weight: 500; display: block; ${item.stockCount <= 0 ? 'text-decoration: line-through; color: #999;' : ''}">${item.name}</span>
+                        <span style="font-size: 0.9rem; color: var(--mocha-text);">${item.desc}</span>
+                    </div>
+                </a>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <span class="price">₹${item.price}</span>
+                    <form action="/api/wishlist/remove" method="POST" style="margin: 0; z-index: 10;">
+                        <input type="hidden" name="itemId" value="${item.id}">
+                        <input type="hidden" name="redirectUrl" value="/wishlist">
+                        <button type="submit" style="background: transparent; border: none; font-size: 1.5rem; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'" title="Remove from Wishlist">💖</button>
+                    </form>
+                </div>
+            </div>`;
+        });
+        html += `</div>`;
+    }
+    res.send(renderPage(html));
+});
+
+app.post('/api/wishlist/add', async (req, res) => {
+    if (!req.session.username) return res.redirect('/');
+    await User.updateOne({ username: req.session.username }, { $addToSet: { wishlist: req.body.itemId } });
+    res.redirect('/menu'); 
+});
+
+app.post('/api/wishlist/remove', async (req, res) => {
+    if (!req.session.username) return res.redirect('/');
+    await User.updateOne({ username: req.session.username }, { $pull: { wishlist: req.body.itemId } });
+    const redirectUrl = req.body.redirectUrl || '/menu';
+    res.redirect(redirectUrl); 
 });
 
 // --- NEW FEATURE: CAFE AT HOME (DIY) ROUTES ---
